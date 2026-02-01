@@ -211,32 +211,7 @@ pub fn create_plan(qp_root: &Path, title: Option<&str>) -> Result<Plan> {
 }
 
 fn default_plan_body() -> String {
-    r#"## Overview
-
-Goals and context.
-
-## Constraints
-
-Scope, assumptions, and risks.
-
-## Implementation Notes
-
-Technical details.
-
-## Review Notes
-
-(Accumulated review summaries appear here.)
-
-## Tickets
-
-### TICKET: <title>
-
-Summary: <short description>
-
-Definition of Done:
-- [ ] Criterion 1
-- [ ] Criterion 2
-"#.to_string()
+    "## Ideas\n\n(Add goals and scope here. When ready, have the agent write the full plan.)".to_string()
 }
 
 /// Set plan state to Approved.

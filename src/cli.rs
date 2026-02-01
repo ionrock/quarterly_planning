@@ -155,22 +155,25 @@ fn cmd_list(qp_root: Option<&std::path::Path>) -> Result<()> {
     Ok(())
 }
 
+/// Plan-mode prompt: ask questions first; do not output full plan structure yet.
+/// When the user is ready, they ask the agent to write the plan in qp format (frontmatter + sections).
+const PLAN_MODE_PROMPT: &str = "You are in plan mode. Ask the user short questions to help them articulate goals, scope, and key outcomes. Do not output a full plan structure, frontmatter, or section outline yet. Only help them get their ideas out. When they are ready, they will ask you to write the plan; then output the full plan in the format qp expects (YAML frontmatter + sections Overview, Constraints, Implementation Notes, Review Notes, Tickets with TICKET/Summary/Definition of Done).";
+
 fn cmd_new(qp_root: Option<&std::path::Path>, name: Option<&str>) -> Result<()> {
     let root = require_qp_root(qp_root)?;
     let config = load_config(Some(&root))?;
     let plan = plan::create_plan(&root, name)?;
     println!("Created plan: {} ({})", plan.meta.title, plan.meta.id);
     println!("Spawning agent for editing: {} {}", config.agent.command, config.agent.args.join(" "));
-    let prompt = format!(
-        "Create or refine a quarterly plan. Save the result as a single markdown file with YAML frontmatter (id, title, state, created_at, updated_at, review_cycles, review_steps) and sections: Overview, Constraints, Implementation Notes, Review Notes, Tickets. Each ticket: TICKET: <title>, Summary:, Definition of Done:."
-    );
     let mut child = crate::agent::run_agent_interactive(
         &config.agent.command,
         &config.agent.args,
-        Some(&prompt),
+        Some(PLAN_MODE_PROMPT),
     )?;
     let _ = child.wait();
-    println!("After editing in the agent, save content to: {}", plan::plan_md_path(&root, &plan.meta.id).display());
+    let path = plan::plan_md_path(&root, &plan.meta.id);
+    println!("Save the full plan to: {}", path.display());
+    println!("Then run `qp approve {}` and `qp optimize {}` for analysis.", plan.meta.id, plan.meta.id);
     Ok(())
 }
 
@@ -182,23 +185,35 @@ fn cmd_show(qp_root: Option<&std::path::Path>, plan_ref: &str) -> Result<()> {
     Ok(())
 }
 
+/// Heuristic: draft + minimal body (no "## Overview" or very short) → plan mode; else edit in place.
+fn use_plan_mode_for_edit(plan: &plan::Plan) -> bool {
+    if plan.meta.state != PlanState::Draft {
+        return false;
+    }
+    !plan.body.contains("## Overview") || plan.body.len() < 200
+}
+
 fn cmd_edit(qp_root: Option<&std::path::Path>, plan_ref: &str) -> Result<()> {
     let root = require_qp_root(qp_root)?;
     let config = load_config(Some(&root))?;
     let plan = plan::get_plan(&root, plan_ref)?;
     let path = plan::plan_md_path(&root, &plan.meta.id);
     println!("Spawning agent to edit: {} {}", config.agent.command, config.agent.args.join(" "));
-    let prompt = format!(
-        "Edit this plan. Keep YAML frontmatter and sections: Overview, Constraints, Implementation Notes, Review Notes, Tickets. Plan path: {}",
-        path.display()
-    );
+    let prompt = if use_plan_mode_for_edit(&plan) {
+        PLAN_MODE_PROMPT.to_string()
+    } else {
+        format!("Edit this plan. Keep YAML frontmatter and sections. Path: {}", path.display())
+    };
     let mut child = crate::agent::run_agent_interactive(
         &config.agent.command,
         &config.agent.args,
         Some(&prompt),
     )?;
     let _ = child.wait();
-    println!("Save updated content to: {}", path.display());
+    println!("Save the full plan to: {}", path.display());
+    if plan.meta.state == PlanState::Draft {
+        println!("Then run `qp approve {}` and `qp optimize {}` for analysis.", plan.meta.id, plan.meta.id);
+    }
     Ok(())
 }
 
