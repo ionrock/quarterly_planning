@@ -1,0 +1,18 @@
+[package]
+name = "qp"
+version = "0.1.0"
+edition = "2021"
+description = "A tool for managing and reviewing plans implemented by agents"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+similar = "2"
+colored = "2"
+dirs = "5"
+serde_yaml = "0.9"
+anyhow = "1"
+thiserror = "1"
