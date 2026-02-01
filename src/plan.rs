@@ -167,6 +167,33 @@ fn title_to_slug(title: &str) -> String {
         .join("-")
 }
 
+/// Instructions text for the LLM: where to write and the required plan structure.
+/// Use this in the initial prompt for `qp new` / `qp edit` so the agent writes to the right file with the right format.
+pub fn plan_format_instructions(
+    plan_md_path: &Path,
+    plan_id: &str,
+    plan_title: &str,
+) -> String {
+    format!(
+        r#"Write or edit the plan in this file only: {}
+Keep this plan id and title in frontmatter: id: "{}", title: "{}".
+
+Required format (see .qp/plan-format.md in the project for the full spec):
+1. YAML frontmatter between --- lines with: id, title, state (snake_case: draft|approved|optimizing|ready|in_progress|completed), created_at, updated_at (RFC3339). Optional: review_cycles, review_steps, agent, review_agents.
+2. Body with exactly these ## sections (order and spelling matter for qp):
+   - Overview
+   - Constraints
+   - Implementation Notes
+   - Review Notes
+   - Tickets (each ticket as subheading with Summary and Definition of Done underneath)
+
+When the user is ready for the full plan, output the complete content and tell them to save to the path above."#,
+        plan_md_path.display(),
+        plan_id,
+        plan_title
+    )
+}
+
 /// Path to plan directory.
 pub fn plan_dir(qp_root: &Path, plan_id: &str) -> PathBuf {
     qp_root.join("plans").join(plan_id)
@@ -233,6 +260,36 @@ pub fn delete_plan(qp_root: &Path, id_or_slug: &str) -> Result<()> {
     Ok(())
 }
 
+/// Content for .qp/plan-format.md: canonical format spec for AI tools and humans.
+/// Written on `qp init` so Cursor and other tools can discover the plan structure.
+pub fn plan_format_md_content() -> &'static str {
+    r#"# qp plan format
+
+Plans live under `.qp/plans/<id>/plan.md`. Each file must follow this structure.
+
+## 1. YAML frontmatter (between `---` lines)
+
+Required fields:
+
+- **id** (string): plan UUID, do not change
+- **title** (string): plan title
+- **state** (string, snake_case): `draft` | `approved` | `optimizing` | `ready` | `in_progress` | `completed`
+- **created_at**, **updated_at** (string): RFC3339 timestamps
+
+Optional: `review_cycles`, `review_steps`, `agent`, `review_agents`.
+
+## 2. Body sections (## headings, order and spelling matter)
+
+- **Overview**
+- **Constraints**
+- **Implementation Notes**
+- **Review Notes**
+- **Tickets** — each ticket as a subheading with **Summary** and **Definition of Done** underneath
+
+When writing or editing a plan, preserve the existing `id` and `title` in frontmatter and use exactly these section names.
+"#
+}
+
 /// Default config.toml content when not using the wizard.
 pub fn default_config_toml() -> &'static str {
     r#"[agent]
@@ -259,7 +316,7 @@ prompt = "Define clear acceptance criteria for each component. What tests must p
 "#
 }
 
-/// Initialize .qp directory: config.toml, plans/, etc.
+/// Initialize .qp directory: config.toml, plans/, plan-format.md, etc.
 /// If config_toml is Some, write that content; else write default if config.toml doesn't exist.
 pub fn init_qp(qp_root: &Path, config_toml: Option<&str>) -> Result<()> {
     std::fs::create_dir_all(qp_root).context("create .qp")?;
@@ -273,6 +330,8 @@ pub fn init_qp(qp_root: &Path, config_toml: Option<&str>) -> Result<()> {
     if !config_path.exists() || config_toml.is_some() {
         std::fs::write(&config_path, to_write).context("write config.toml")?;
     }
+    let format_path = qp_root.join("plan-format.md");
+    std::fs::write(&format_path, plan_format_md_content()).context("write plan-format.md")?;
     Ok(())
 }
 
