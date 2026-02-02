@@ -8,12 +8,11 @@ build:
 release:
 	cargo build --release
 
-install: release
-	install -d $(PREFIX)/bin
-	install -m 755 target/release/qp $(PREFIX)/bin/qp
+install:
+	cargo install --path .
 
 uninstall:
-	rm -f $(PREFIX)/bin/qp
+	cargo uninstall qp
 
 clean:
 	cargo clean
