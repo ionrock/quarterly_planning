@@ -13,9 +13,8 @@ use clap::Parser;
 use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::io::{Read, Write};
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::time::Instant;
 
 #[derive(Parser, Debug)]
@@ -189,7 +188,20 @@ List at least 4 assumptions the plan makes that should be verified before implem
 ### Potential Failures\n\
 List at least 4 ways the implementation could fail in production. Consider infrastructure failures, data issues, scaling problems, and operational concerns.\n\n\
 Output the entire plan with the Review Notes section populated. Keep all other sections (Overview, Constraints, Implementation Notes, Tickets) unchanged.",
-        "details" => "Expand this plan with implementation details. Add specifics about technologies, APIs, data structures, and algorithms.",
+        "details" => "Expand this plan with implementation details.\n\n\
+CRITICAL: Your output must be the COMPLETE, EXPANDED plan - not a summary or description of changes.\n\
+Do NOT ask for permission. Do NOT describe what you would add. Just output the full plan.\n\n\
+Add an ## Implementation Notes section (if not present, or expand existing) with:\n\n\
+### Technology Stack\n\
+Specify exact versions and libraries. Include language version, key dependencies with versions, build tools, and testing frameworks.\n\n\
+### Data Structures\n\
+Define the core data structures with actual code. Show structs/classes, interfaces/traits, and type definitions. Include field types and documentation.\n\n\
+### Algorithms & Logic\n\
+Document key algorithms with pseudocode or actual code. Explain the approach and any important implementation details.\n\n\
+### API Design\n\
+If applicable, show endpoint signatures, request/response schemas, and error formats.\n\n\
+Your response must START with the plan's YAML frontmatter (---) and include ALL sections: Overview, Constraints, Implementation Notes, Review Notes, and Tickets.\n\
+Do NOT write meta-commentary about the plan. Output ONLY the plan content.",
         "breakdown" => "Break this plan into precise, atomic steps. Each step should be independently implementable and testable.",
         "deliverables" => "Define clear acceptance criteria for each component. What tests must pass? What can be demonstrated? How do we know it's done?",
         _ => anyhow::bail!("Unknown agent: {}", agent_name),
@@ -256,31 +268,22 @@ fn run_agent(command: &str, args: &[String], prompt: &str, plan_content: &str) -
         prompt, plan_content
     );
 
-    let mut child = Command::new(command)
-        .args(args)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .with_context(|| format!("spawn {} {}", command, args.join(" ")))?;
+    // Build command with -p flag for print mode
+    let mut cmd_args = vec!["-p".to_string()];
+    cmd_args.extend(args.iter().cloned());
+    cmd_args.push(full_input);
 
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(full_input.as_bytes())
-            .context("write stdin")?;
-        stdin.flush().context("flush stdin")?;
+    let output = Command::new(command)
+        .args(&cmd_args)
+        .output()
+        .with_context(|| format!("run {} {}", command, cmd_args.join(" ")))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("agent exited with {}: {}", output.status, stderr);
     }
 
-    let mut stdout = String::new();
-    if let Some(mut out) = child.stdout.take() {
-        out.read_to_string(&mut stdout).context("read stdout")?;
-    }
-
-    let status = child.wait().context("wait for agent")?;
-    if !status.success() {
-        anyhow::bail!("agent exited with {}", status);
-    }
-
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     Ok(stdout)
 }
 

@@ -89,7 +89,20 @@ Output the entire plan with the Review Notes section populated. Keep all other s
         ReviewAgentConfig {
             command: DEFAULT_AGENT_COMMAND.to_string(),
             args: vec![],
-            prompt: "Expand this plan with implementation details. Add specifics about technologies, APIs, data structures, and algorithms.".to_string(),
+            prompt: "Expand this plan with implementation details.\n\n\
+CRITICAL: Your output must be the COMPLETE, EXPANDED plan - not a summary or description of changes.\n\
+Do NOT ask for permission. Do NOT describe what you would add. Just output the full plan.\n\n\
+Add an ## Implementation Notes section (if not present, or expand existing) with:\n\n\
+### Technology Stack\n\
+Specify exact versions and libraries. Include language version, key dependencies with versions, build tools, and testing frameworks.\n\n\
+### Data Structures\n\
+Define the core data structures with actual code. Show structs/classes, interfaces/traits, and type definitions. Include field types and documentation.\n\n\
+### Algorithms & Logic\n\
+Document key algorithms with pseudocode or actual code. Explain the approach and any important implementation details.\n\n\
+### API Design\n\
+If applicable, show endpoint signatures, request/response schemas, and error formats.\n\n\
+Your response must START with the plan's YAML frontmatter (---) and include ALL sections: Overview, Constraints, Implementation Notes, Review Notes, and Tickets.\n\
+Do NOT write meta-commentary about the plan. Output ONLY the plan content.".to_string(),
         },
     );
     m.insert(
