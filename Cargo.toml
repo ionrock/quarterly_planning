@@ -7,6 +7,7 @@ description = "A tool for managing and reviewing plans implemented by agents"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 toml = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4", "serde"] }
@@ -16,3 +17,9 @@ dirs = "5"
 serde_yaml = "0.9"
 anyhow = "1"
 thiserror = "1"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+tokio = { version = "1", features = ["full"] }
+
+[[bin]]
+name = "eval-agent"
+path = "src/bin/eval_agent.rs"

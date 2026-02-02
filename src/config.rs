@@ -72,7 +72,16 @@ fn default_review_agents() -> HashMap<String, ReviewAgentConfig> {
         ReviewAgentConfig {
             command: DEFAULT_AGENT_COMMAND.to_string(),
             args: vec![],
-            prompt: "Review this plan and identify weaknesses, missing considerations, edge cases, potential failures, and assumptions that need validation.".to_string(),
+            prompt: "Review this plan and identify gaps, risks, and issues. Output the complete plan with an updated Review Notes section (## Review Notes) containing these four subsections:\n\n\
+### Identified Weaknesses\n\
+List at least 5 specific weaknesses in the plan. Focus on missing security considerations, unclear requirements, underspecified behavior, missing error handling, and architectural gaps. Be concrete and actionable.\n\n\
+### Edge Cases\n\
+List at least 5 edge cases that the plan doesn't address. Think about boundary conditions, error states, concurrent access, invalid inputs, and failure scenarios.\n\n\
+### Assumptions to Validate\n\
+List at least 4 assumptions the plan makes that should be verified before implementation. These are things that could change the approach if they turn out to be false.\n\n\
+### Potential Failures\n\
+List at least 4 ways the implementation could fail in production. Consider infrastructure failures, data issues, scaling problems, and operational concerns.\n\n\
+Output the entire plan with the Review Notes section populated. Keep all other sections (Overview, Constraints, Implementation Notes, Tickets) unchanged.".to_string(),
         },
     );
     m.insert(
