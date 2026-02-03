@@ -110,7 +110,22 @@ Do NOT write meta-commentary about the plan. Output ONLY the plan content.".to_s
         ReviewAgentConfig {
             command: DEFAULT_AGENT_COMMAND.to_string(),
             args: vec![],
-            prompt: "Break this plan into precise, atomic steps. Each step should be independently implementable and testable.".to_string(),
+            prompt: "Break this plan into precise, atomic steps.\n\n\
+CRITICAL: Your output must be the COMPLETE plan with detailed steps added - not a summary or description.\n\
+Do NOT ask for permission. Do NOT describe what steps you would add. Output the full plan with steps.\n\n\
+For each ticket in the ## Tickets section, add a #### Steps subsection containing:\n\
+- Numbered steps (1, 2, 3, etc.) that are atomic and independently implementable\n\
+- Each step should have a clear action and a verification method\n\
+- Steps should be small enough to complete in under 2 hours\n\
+- Include specific commands, file names, and technical details\n\
+- End each step with 'Verify:' describing how to confirm completion\n\n\
+Example step format:\n\
+1. **Create user model file**\n\
+   - Create src/models/user.ts with User interface\n\
+   - Include id, email, name, createdAt fields\n\
+   - Verify: TypeScript compiles without errors\n\n\
+Your response must START with the plan's YAML frontmatter (---) and include ALL sections.\n\
+Output ONLY the plan content with steps added. No meta-commentary.".to_string(),
         },
     );
     m.insert(
