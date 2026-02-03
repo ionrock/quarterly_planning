@@ -218,7 +218,27 @@ Example step format:\n\
    - Verify: TypeScript compiles without errors\n\n\
 Your response must START with the plan's YAML frontmatter (---) and include ALL sections.\n\
 Output ONLY the plan content with steps added. No meta-commentary.",
-        "deliverables" => "Define clear acceptance criteria for each component. What tests must pass? What can be demonstrated? How do we know it's done?",
+        "deliverables" => "Add clear acceptance criteria for each ticket in the plan.\n\n\
+CRITICAL: Your output must be the COMPLETE plan with acceptance criteria added - not a summary or description.\n\
+Do NOT ask for permission. Do NOT describe what criteria you would add. Output the full plan with criteria.\n\n\
+For each ticket in the ## Tickets section, add these subsections:\n\n\
+#### Acceptance Criteria\n\
+Numbered groups of specific, testable requirements. Use checkbox format for each item:\n\
+1. **Category Name**\n\
+   - [ ] Specific testable requirement\n\
+   - [ ] Another testable requirement\n\n\
+#### Demo Script\n\
+Concrete commands or code showing how to verify the feature works. Include expected output.\n\n\
+#### Test Requirements\n\
+Specific tests that must pass, with checkboxes:\n\
+- [ ] Test description\n\
+- [ ] Another test\n\n\
+Focus on:\n\
+- What specific behaviors must be verified?\n\
+- What can be demonstrated to stakeholders?\n\
+- How do we know the ticket is complete?\n\n\
+Your response must START with the plan's YAML frontmatter (---) and include ALL sections.\n\
+Output ONLY the plan content with acceptance criteria added. No meta-commentary.",
         _ => anyhow::bail!("Unknown agent: {}", agent_name),
     };
     Ok(prompt.to_string())
